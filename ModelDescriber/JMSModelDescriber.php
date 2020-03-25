@@ -43,7 +43,7 @@ class JMSModelDescriber implements ModelDescriberInterface, ModelRegistryAwareIn
 
     public function __construct(
         MetadataFactoryInterface $factory,
-        PropertyNamingStrategyInterface $namingStrategy,
+        PropertyNamingStrategyInterface $namingStrategy = null,
         Reader $reader
     ) {
         $this->factory = $factory;
@@ -68,6 +68,9 @@ class JMSModelDescriber implements ModelDescriberInterface, ModelRegistryAwareIn
         $annotationsReader = new AnnotationsReader($this->doctrineReader, $this->modelRegistry);
         $annotationsReader->updateSchema(new \ReflectionClass($className), $schema);
 
+        $isJmsV1 = null !== $this->namingStrategy;
+
+        $properties = $schema->getProperties();
         foreach ($metadata->propertyMetadata as $item) {
             // filter groups
             if (null !== $groupsExclusion && $groupsExclusion->shouldSkipProperty($item, SerializationContext::create())) {
@@ -81,9 +84,12 @@ class JMSModelDescriber implements ModelDescriberInterface, ModelRegistryAwareIn
                 $previousGroups = $groups;
                 $groups = $groups[$item->name];
             } elseif (!isset($groups[$item->name]) && !empty($this->previousGroups[$model->getHash()])) {
-                // $groups = $this->previousGroups[spl_object_hash($model)]; use this for jms/serializer 2.0
-                $groups = false === $this->propertyTypeUsesGroups($item->type) ? null : [GroupsExclusionStrategy::DEFAULT_GROUP];
-            } elseif (is_array($groups)) {
+                $groups = false === $this->propertyTypeUsesGroups($item->type)
+                    ? null
+                    : ($isJmsV1 ? [GroupsExclusionStrategy::DEFAULT_GROUP] : $this->previousGroups[$model->getHash()]);
+            }
+
+            if (is_array($groups)) {
                 $groups = array_filter($groups, 'is_scalar');
             }
 
@@ -91,12 +97,18 @@ class JMSModelDescriber implements ModelDescriberInterface, ModelRegistryAwareIn
                 $groups = null;
             }
 
-            $name = $this->namingStrategy->translateName($item);
+            $name = true === $isJmsV1 ? $this->namingStrategy->translateName($item) : $item->serializedName;
             // read property options from Swagger Property annotation if it exists
-            if (null !== $item->reflection) {
-                $property = Util::getProperty($schema, $annotationsReader->getPropertyName($item->reflection, $name));
-                $annotationsReader->updateProperty($item->reflection, $property, $groups);
-            } else {
+            try {
+                if (true === $isJmsV1 && property_exists($item, 'reflection') && null !== $item->reflection) {
+                    $reflection = $item->reflection;
+                } else {
+                    $reflection = new \ReflectionProperty($item->class, $item->name);
+                }
+
+                $property = Util::getProperty($schema, $annotationsReader->getPropertyName($reflection, $name));
+                $annotationsReader->updateProperty($reflection, $property, $groups);
+            } catch (\ReflectionException $e) {
                 $property = Util::getProperty($schema, $name);
             }
 
@@ -152,7 +164,7 @@ class JMSModelDescriber implements ModelDescriberInterface, ModelRegistryAwareIn
 
             $property->type = 'array';
             $property->items = Util::createChild($property, OA\Items::class);
-            $this->describeItem($nestedType, $property->items, $groups);
+            $this->describeItem($nestedType, $property->items, $groups, $previousGroups);
         } elseif ('array' === $type['name']) {
             $property->type = 'object';
             $property->additionalProperties = true;

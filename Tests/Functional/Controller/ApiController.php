@@ -13,6 +13,7 @@ namespace Nelmio\ApiDocBundle\Tests\Functional\Controller;
 
 use FOS\RestBundle\Controller\Annotations\QueryParam;
 use FOS\RestBundle\Controller\Annotations\RequestParam;
+use Nelmio\ApiDocBundle\Annotation\Areas;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Nelmio\ApiDocBundle\Annotation\Operation;
 use Nelmio\ApiDocBundle\Annotation\Security;
@@ -207,6 +208,15 @@ class ApiController
      * )
      */
     public function operationsWithOtherAnnotations()
+    {
+    }
+
+    /**
+     * @Route("/areas/new", methods={"GET", "POST"})
+     *
+     * @Areas({"area", "area2"})
+     */
+    public function newAreaAction()
     {
     }
 }

@@ -44,12 +44,16 @@ final class DocumentationController
     public function __invoke(Request $request, $area = 'default')
     {
         if (!$this->generatorLocator->has($area)) {
-            throw new BadRequestHttpException(sprintf('Area "%s" is not supported.', $area));
+            throw new BadRequestHttpException(sprintf('Area "%s" is not supported as it isn\'t defined in config.', $area));
         }
 
         $spec = json_decode(json_encode($this->generatorLocator->get($area)->generate()), true);
         if ('' !== $request->getBaseUrl()) {
             $spec['basePath'] = $request->getBaseUrl();
+        }
+
+        if (empty($spec['host'])) {
+            $spec['host'] = $request->getHost();
         }
 
         return new JsonResponse($spec);

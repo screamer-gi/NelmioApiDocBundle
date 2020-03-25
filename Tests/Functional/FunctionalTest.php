@@ -11,6 +11,8 @@
 
 namespace Nelmio\ApiDocBundle\Tests\Functional;
 
+use EXSyst\Component\Swagger\Tag;
+
 class FunctionalTest extends WebTestCase
 {
     public function testConfiguredDocumentation()
@@ -201,6 +203,10 @@ class FunctionalTest extends WebTestCase
                         'type' => 'string',
                         'enum' => ['disabled', 'enabled'],
                     ],
+                    'dateAsInterface' => [
+                        'type' => 'string',
+                        'format' => 'date-time',
+                    ],
                 ],
                 'definition' => 'User',
             ],
@@ -251,6 +257,8 @@ class FunctionalTest extends WebTestCase
                 'extended_builtin' => [
                     'type' => 'string',
                     'enum' => ['foo', 'bar'],
+                ],
+                'save' => [
                 ],
             ],
             'required' => ['dummy', 'dummies', 'entity', 'entities', 'document', 'documents', 'extended_builtin'],
@@ -368,6 +376,19 @@ class FunctionalTest extends WebTestCase
                 'propertyExpression' => [
                     'type' => 'integer',
                     'pattern' => 'If this is a tech post, the category should be either php or symfony!',
+                ],
+                'propertyRange' => [
+                    'type' => 'integer',
+                    'maximum' => 5,
+                    'minimum' => 1,
+                ],
+                'propertyLessThan' => [
+                    'type' => 'integer',
+                    'exclusiveMaximum' => 42,
+                ],
+                'propertyLessThanOrEqual' => [
+                    'type' => 'integer',
+                    'maximum' => 23,
                 ],
             ],
             'type' => 'object',

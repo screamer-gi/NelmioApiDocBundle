@@ -18,7 +18,7 @@ final class Configuration implements ConfigurationInterface
 {
     public function getConfigTreeBuilder()
     {
-        $treeBuilder = new TreeBuilder();
+        $treeBuilder = new TreeBuilder('nelmio_api_doc');
         $treeBuilder
             ->root('nelmio_api_doc')
             ->beforeNormalization()
